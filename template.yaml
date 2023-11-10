@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  kotlin-lambda
+
+  Sample SAM Template for kotlin-lambda
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20
+    MemorySize: 512
+
+    Tracing: Active
+  Api:
+    TracingEnabled: true
+Resources:
+  KotlinLambdaFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: kotlin-lambda
+      AutoPublishAlias: SnapStart
+      SnapStart:
+        ApplyOn: PublishedVersions
+      CodeUri: KotlinLambdaFunction
+      Handler: example.Handler #::handleRequest
+      Runtime: java17
+      Layers:
+        - arn:aws:lambda:us-east-1:157417159150:layer:AWSCodeGuruProfilerJavaAgentLayer:9
+        # - arn:aws:lambda:us-east-1:580247275435:layer:LambdaInsightsExtension-Arm64:5
+      Architectures:
+      - x86_64
+      MemorySize: 512
+      Environment:
+        Variables:
+            POWERTOOLS_LOG_LEVEL: INFO
+            POWERTOOLS_SERVICE_NAME: kotlin-lambda
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSOrganizationsReadOnlyAccess
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
